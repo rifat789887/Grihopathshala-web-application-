@@ -4,29 +4,26 @@ service cloud.firestore {
     // ===============================================================
     // Assumed Data Model
     // ===============================================================
-    // Collection: users
-    // Fields: uid, email, displayName, role (admin/student), createdAt
-    //
-    // Collection: courses
-    // Fields: title, description, price, category, imageUrl, active
     //
     // Collection: notices
-    // Fields: title, content, date, active
+    // Fields: title (string), date (string), content (string), active (bool), category (string)
     //
     // Collection: routines
-    // Fields: day, time, subject, teacher
-    //
-    // Collection: fees
-    // Fields: userId, studentName, amount, status (paid/unpaid), date, receiptId
+    // Fields: day (string), subject (string), teacher (string), time (string)
     //
     // Collection: classes
-    // Fields: title, description, videoLink, date
+    // Fields: title (string), date (string), link (string), teacher (string)
     //
-    // Collection: admissions
-    // Fields: studentName, fatherName, motherName, schoolName, studentClass, district, userId, status, createdAt
+    // Collection: courses
+    // Fields: title (string), description (string), shortDescription (string), price (number), active (bool), category (string), imageUrl (string)
     //
     // Collection: settings
-    // Fields: text, link
+    // Document: marquee
+    // Fields: text (string), link (string)
+    //
+    // Collection: users
+    // Fields: uid (string), email (string), role (string), displayName (string), photoURL (string)
+    //
     // ===============================================================
 
     // ===============================================================
@@ -36,62 +33,60 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "mdrifat.contact@gmail.com" && request.auth.token.email_verified == true));
+    }
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
-      return isAuthenticated() &&
-        (
-          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-          (request.auth.token.email == "mdrifat.contact@gmail.com")
-        );
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
     }
 
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
     function isValidUser(data) {
-      return data.keys().hasAll(['uid', 'email', 'role']) &&
-             data.uid is string && data.email is string &&
+      return data.uid is string &&
+             data.email is string &&
              data.role in ['admin', 'student'];
     }
 
-    function isValidCourse(data) {
-      return data.keys().hasAll(['title', 'shortDescription', 'detailedDescription', 'price', 'category']) &&
-             data.title is string && data.title.size() < 200 &&
-             data.shortDescription is string && data.shortDescription.size() < 1000 &&
-             data.detailedDescription is string && data.detailedDescription.size() < 10000 &&
-             data.price is number && data.price >= 0 &&
-             (!('features' in data) || data.features is list) &&
-             (!('speciality' in data) || data.speciality is string);
-    }
-
     function isValidNotice(data) {
-      return data.keys().hasAll(['title', 'content', 'date']) &&
-             data.title is string && data.title.size() < 500 &&
-             data.content is string && data.content.size() < 10000;
+      return data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.date is string &&
+             data.content is string &&
+             data.active is bool;
     }
 
     function isValidRoutine(data) {
-      let days = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
-                  'শনিবার', 'রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার'];
-      return data.keys().hasAll(['day', 'time', 'subject']) &&
-             data.day in days;
-    }
-
-    function isValidFee(data) {
-      return data.keys().hasAll(['userId', 'amount', 'status']) &&
-             data.userId is string && data.amount is number &&
-             data.status in ['paid', 'unpaid'];
+      return data.day is string &&
+             data.subject is string &&
+             data.teacher is string &&
+             data.time is string;
     }
 
     function isValidClass(data) {
-      return data.keys().hasAll(['title', 'videoLink', 'date']) &&
-             data.title is string && data.videoLink is string;
+      return data.title is string &&
+             data.date is string &&
+             data.link is string &&
+             data.teacher is string;
     }
 
-    function isValidAdmission(data) {
-      return data.keys().hasAll(['studentName', 'fatherName', 'motherName', 'schoolName', 'studentClass', 'district', 'userId', 'courseId']) &&
-             data.studentName is string && data.studentName.size() < 100 &&
-             data.userId is string && data.courseId is string;
+    function isValidCourse(data) {
+      return data.title is string &&
+             data.price is number &&
+             data.active is bool &&
+             data.category is string;
+    }
+
+    function isValidMarquee(data) {
+      return data.text is string &&
+             data.link is string;
     }
 
     // ===============================================================
@@ -99,14 +94,10 @@ service cloud.firestore {
     // ===============================================================
 
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) && request.resource.data.role == 'student' || isAdmin());
-      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) && request.resource.data.role == resource.data.role || isAdmin());
-    }
-
-    match /courses/{courseId} {
-      allow read: if true;
-      allow write: if isAdmin() && isValidCourse(request.resource.data);
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'student' || isAdmin());
+      allow update: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+      allow delete: if isAdmin();
     }
 
     match /notices/{noticeId} {
@@ -119,25 +110,19 @@ service cloud.firestore {
       allow write: if isAdmin() && isValidRoutine(request.resource.data);
     }
 
-    match /fees/{feeId} {
-      allow read: if isOwner(resource.data.userId) || isAdmin();
-      allow write: if isAdmin() && isValidFee(request.resource.data);
-    }
-
     match /classes/{classId} {
       allow read: if true;
       allow write: if isAdmin() && isValidClass(request.resource.data);
     }
 
-    match /admissions/{admissionId} {
-      allow read: if isOwner(resource.data.userId) || isAdmin();
-      allow create: if isAuthenticated() && isValidAdmission(request.resource.data) && isOwner(request.resource.data.userId) && request.resource.data.status == 'pending';
-      allow update: if isAdmin() && isValidAdmission(request.resource.data);
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidCourse(request.resource.data);
     }
 
-    match /settings/{settingId} {
+    match /settings/marquee {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && isValidMarquee(request.resource.data);
     }
   }
 }

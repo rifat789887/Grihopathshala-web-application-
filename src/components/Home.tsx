@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, limit, getDocs, doc, getDoc, orderBy, where } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 import { motion } from 'motion/react';
 import { GraduationCap, BookOpen, Calendar, Bell, PlayCircle, ArrowRight, ExternalLink, Smartphone, Monitor, Globe, Award, Users } from 'lucide-react';
 import { format } from 'date-fns';
@@ -20,24 +20,44 @@ export default function Home() {
       try {
         setLoading(true);
         // Marquee
-        const marqueeDoc = await getDoc(doc(db, 'settings', 'marquee'));
-        if (marqueeDoc.exists()) setMarquee(marqueeDoc.data() as any);
+        try {
+          const marqueeDoc = await getDoc(doc(db, 'settings', 'marquee'));
+          if (marqueeDoc.exists()) setMarquee(marqueeDoc.data() as any);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.GET, 'settings/marquee');
+        }
 
         // Notices
-        const noticesSnap = await getDocs(query(collection(db, 'notices'), where('active', '==', true), orderBy('date', 'desc'), limit(3)));
-        setNotices(noticesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        try {
+          const noticesSnap = await getDocs(query(collection(db, 'notices'), where('active', '==', true), orderBy('date', 'desc'), limit(3)));
+          setNotices(noticesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        } catch (err) {
+          handleFirestoreError(err, OperationType.LIST, 'notices');
+        }
 
         // Routines
-        const routinesSnap = await getDocs(query(collection(db, 'routines'), limit(7)));
-        setRoutines(routinesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        try {
+          const routinesSnap = await getDocs(query(collection(db, 'routines'), limit(7)));
+          setRoutines(routinesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        } catch (err) {
+          handleFirestoreError(err, OperationType.LIST, 'routines');
+        }
 
         // Classes
-        const classesSnap = await getDocs(query(collection(db, 'classes'), orderBy('date', 'desc'), limit(5)));
-        setClasses(classesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        try {
+          const classesSnap = await getDocs(query(collection(db, 'classes'), orderBy('date', 'desc'), limit(5)));
+          setClasses(classesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        } catch (err) {
+          handleFirestoreError(err, OperationType.LIST, 'classes');
+        }
 
         // Courses
-        const coursesSnap = await getDocs(query(collection(db, 'courses'), where('active', '==', true), limit(3)));
-        setCourses(coursesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        try {
+          const coursesSnap = await getDocs(query(collection(db, 'courses'), where('active', '==', true), limit(3)));
+          setCourses(coursesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        } catch (err) {
+          handleFirestoreError(err, OperationType.LIST, 'courses');
+        }
       } catch (err) {
         console.error("Error fetching home data:", err);
       } finally {
