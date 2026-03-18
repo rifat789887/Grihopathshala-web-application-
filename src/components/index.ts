@@ -1,0 +1,10 @@
+export { default as Layout } from './Layout';
+export { default as Home } from './Home';
+export { default as Admin } from './Admin';
+export { default as AdmissionForm } from './AdmissionForm';
+export { default as CourseList } from './CourseList';
+export { default as NoticeBoard } from './NoticeBoard';
+export { default as Routine } from './Routine';
+export { default as PastClasses } from './PastClasses';
+export { default as Blog } from './Blog';
+export { default as Auth } from './Auth';

@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and role information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "student"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "Educational course details",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "shortDescription": { "type": "string" },
+        "detailedDescription": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "features": { "type": "array", "items": { "type": "string" } },
+        "speciality": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["title", "shortDescription", "detailedDescription", "price", "category"]
+    },
+    "Notice": {
+      "title": "Notice",
+      "description": "Notice board announcement",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["title", "content", "date"]
+    },
+    "Routine": {
+      "title": "Routine",
+      "description": "Weekly class schedule",
+      "type": "object",
+      "properties": {
+        "day": { "type": "string", "enum": ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] },
+        "time": { "type": "string" },
+        "subject": { "type": "string" },
+        "teacher": { "type": "string" }
+      },
+      "required": ["day", "time", "subject"]
+    },
+    "Fee": {
+      "title": "Fee",
+      "description": "Student fee record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["paid", "unpaid"] },
+        "date": { "type": "string", "format": "date-time" },
+        "receiptId": { "type": "string" }
+      },
+      "required": ["userId", "amount", "status"]
+    },
+    "Class": {
+      "title": "Class",
+      "description": "Past live class record",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "videoLink": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "videoLink", "date"]
+    },
+    "Admission": {
+      "title": "Admission",
+      "description": "Student admission form data",
+      "type": "object",
+      "properties": {
+        "studentName": { "type": "string" },
+        "fatherName": { "type": "string" },
+        "motherName": { "type": "string" },
+        "schoolName": { "type": "string" },
+        "studentClass": { "type": "string" },
+        "district": { "type": "string" },
+        "courseId": { "type": "string" },
+        "courseTitle": { "type": "string" },
+        "userId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentName", "fatherName", "motherName", "schoolName", "studentClass", "district", "userId", "courseId"]
+    },
+    "AdMarquee": {
+      "title": "AdMarquee",
+      "description": "Scrolling text advertisement",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "link": { "type": "string" }
+      },
+      "required": ["text"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles" },
+    "/courses/{courseId}": { "schema": "Course", "description": "Course list" },
+    "/notices/{noticeId}": { "schema": "Notice", "description": "Notice board" },
+    "/routines/{routineId}": { "schema": "Routine", "description": "Weekly routine" },
+    "/fees/{feeId}": { "schema": "Fee", "description": "Fee records" },
+    "/classes/{classId}": { "schema": "Class", "description": "Past live classes" },
+    "/admissions/{admissionId}": { "schema": "Admission", "description": "Admission forms" },
+    "/settings/marquee": { "schema": "AdMarquee", "description": "Marquee settings" }
+  }
+}
