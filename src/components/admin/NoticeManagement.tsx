@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, doc, addDoc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { db, handleFirestoreError, OperationType } from '../../firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bell, Plus, Trash2, Edit2, Check, X, Search, Calendar, FileText } from 'lucide-react';
 import { format } from 'date-fns';
@@ -43,9 +43,12 @@ export default function NoticeManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('আপনি কি নিশ্চিত যে আপনি এই নোটিশটি মুছে ফেলতে চান?')) {
+    if (!window.confirm('আপনি কি নিশ্চিত যে আপনি এই নোটিশটি মুছে ফেলতে চান?')) return;
+    try {
       await deleteDoc(doc(db, 'notices', id));
       setNotices(notices.filter(n => n.id !== id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `notices/${id}`);
     }
   };
 

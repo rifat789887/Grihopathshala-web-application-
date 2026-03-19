@@ -1,11 +1,22 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, Component, ErrorInfo, ReactNode, lazy, Suspense } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from './firebase';
-import { Home, Layout, Admin, AdmissionForm, CourseList, NoticeBoard, Routine, PastClasses, Blog, Auth } from './components';
+import { Layout } from './components';
 import { motion } from 'motion/react';
 import { GraduationCap, AlertCircle } from 'lucide-react';
+
+// Lazy load components
+const Home = lazy(() => import('./components/Home'));
+const Admin = lazy(() => import('./components/Admin'));
+const AdmissionForm = lazy(() => import('./components/AdmissionForm'));
+const CourseList = lazy(() => import('./components/CourseList'));
+const NoticeBoard = lazy(() => import('./components/NoticeBoard'));
+const Routine = lazy(() => import('./components/Routine'));
+const PastClasses = lazy(() => import('./components/PastClasses'));
+const Blog = lazy(() => import('./components/Blog'));
+const Auth = lazy(() => import('./components/Auth'));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: any }> {
   constructor(props: { children: ReactNode }) {
@@ -52,6 +63,16 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 
     return this.props.children;
   }
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
 }
 
 export default function App() {
@@ -115,21 +136,34 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Router>
+        <ScrollToTop />
         <Layout user={user} role={role}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/courses" element={<CourseList />} />
-            <Route path="/notices" element={<NoticeBoard />} />
-            <Route path="/routine" element={<Routine />} />
-            <Route path="/classes" element={<PastClasses />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/admission" element={user ? <AdmissionForm user={user} /> : <Navigate to="/auth" />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route 
-              path="/admin/*" 
-              element={role === 'admin' ? <Admin /> : <Navigate to="/" />} 
-            />
-          </Routes>
+          <Suspense fallback={
+            <div className="min-h-[60vh] flex items-center justify-center">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="text-emerald-500"
+              >
+                <GraduationCap size={48} />
+              </motion.div>
+            </div>
+          }>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/courses" element={<CourseList />} />
+              <Route path="/notices" element={<NoticeBoard />} />
+              <Route path="/routine" element={<Routine />} />
+              <Route path="/classes" element={<PastClasses />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/admission" element={user ? <AdmissionForm user={user} /> : <Navigate to="/auth" />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route 
+                path="/admin/*" 
+                element={role === 'admin' ? <Admin /> : <Navigate to="/" />} 
+              />
+            </Routes>
+          </Suspense>
         </Layout>
       </Router>
     </ErrorBoundary>

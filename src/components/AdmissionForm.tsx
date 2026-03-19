@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { collection, addDoc, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 import { User } from 'firebase/auth';
 import { motion, AnimatePresence } from 'motion/react';
-import { GraduationCap, CheckCircle, Clock, AlertCircle, Send, User as UserIcon, School, MapPin, Users, BookOpen } from 'lucide-react';
+import { GraduationCap, CheckCircle, Clock, AlertCircle, Send, User as UserIcon, School, MapPin, Users, BookOpen, Download, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface AdmissionFormProps {
@@ -20,6 +20,8 @@ export default function AdmissionForm({ user }: AdmissionFormProps) {
     district: '',
     courseId: '',
     courseTitle: '',
+    mobileNumber: '',
+    whatsappNumber: '',
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -29,14 +31,22 @@ export default function AdmissionForm({ user }: AdmissionFormProps) {
 
   useEffect(() => {
     const fetchMyAdmissions = async () => {
-      const q = query(collection(db, 'admissions'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
-      const snap = await getDocs(q);
-      setMyAdmissions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      try {
+        const q = query(collection(db, 'admissions'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+        const snap = await getDocs(q);
+        setMyAdmissions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (error) {
+        handleFirestoreError(error, OperationType.LIST, 'admissions');
+      }
     };
     const fetchCourses = async () => {
-      const q = query(collection(db, 'courses'), where('active', '==', true), orderBy('title', 'asc'));
-      const snap = await getDocs(q);
-      setCourses(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      try {
+        const q = query(collection(db, 'courses'), where('active', '==', true), orderBy('title', 'asc'));
+        const snap = await getDocs(q);
+        setCourses(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (error) {
+        handleFirestoreError(error, OperationType.LIST, 'courses');
+      }
     };
     fetchMyAdmissions();
     fetchCourses();
@@ -55,6 +65,7 @@ export default function AdmissionForm({ user }: AdmissionFormProps) {
         ...formData,
         userId: user.uid,
         status: 'pending',
+        paymentStatus: 'unpaid',
         createdAt: new Date().toISOString(),
       });
       setSuccess(true);
@@ -67,13 +78,100 @@ export default function AdmissionForm({ user }: AdmissionFormProps) {
         district: '',
         courseId: '',
         courseTitle: '',
+        mobileNumber: '',
+        whatsappNumber: '',
       });
       setTimeout(() => setSuccess(false), 5000);
     } catch (err: any) {
-      console.error(err);
+      handleFirestoreError(err, OperationType.CREATE, 'admissions');
       setError('আবেদন জমা দিতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadReceipt = (adm: any) => {
+    const printContent = `
+      <html>
+        <head>
+          <title>ভর্তি রশিদ - গৃহপাঠশালা</title>
+          <style>
+            body { font-family: 'Arial', sans-serif; padding: 40px; color: #333; }
+            .header { text-align: center; border-bottom: 2px solid #10b981; padding-bottom: 20px; margin-bottom: 30px; }
+            .title { font-size: 24px; font-weight: bold; color: #10b981; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .info-item { margin-bottom: 15px; }
+            .label { font-weight: bold; color: #666; font-size: 14px; }
+            .value { font-size: 16px; margin-top: 5px; }
+            .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; pt: 20px; }
+            .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+            .status-pending { background: #fef3c7; color: #92400e; }
+            .status-approved { background: #d1fae5; color: #065f46; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="title">গৃহপাঠশালা - ভর্তি রশিদ</div>
+            <p>অনলাইন শিক্ষা প্ল্যাটফর্ম</p>
+          </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">শিক্ষার্থীর নাম</div>
+              <div class="value">${adm.studentName}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">কোর্স</div>
+              <div class="value">${adm.courseTitle}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">শ্রেণী</div>
+              <div class="value">${adm.studentClass}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">পিতার নাম</div>
+              <div class="value">${adm.fatherName}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">মোবাইল নম্বর</div>
+              <div class="value">${adm.mobileNumber}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">হোয়াটসঅ্যাপ নম্বর</div>
+              <div class="value">${adm.whatsappNumber}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">আবেদনের তারিখ</div>
+              <div class="value">${format(new Date(adm.createdAt), 'dd MMMM, yyyy')}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">অবস্থা</div>
+              <div class="value">
+                <span class="status ${adm.status === 'approved' ? 'status-approved' : 'status-pending'}">
+                  ${adm.status === 'approved' ? 'অনুমোদিত' : 'অপেক্ষমান'}
+                </span>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="label">পেমেন্ট অবস্থা</div>
+              <div class="value">
+                <span class="status ${adm.paymentStatus === 'paid' ? 'status-approved' : 'status-pending'}">
+                  ${adm.paymentStatus === 'paid' ? 'পেইড (Paid)' : 'আনপেইড (Unpaid)'}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="footer">
+            <p>এই রশিদটি সিস্টেম জেনারেটেড। কোনো স্বাক্ষরের প্রয়োজন নেই।</p>
+            <p>© ${new Date().getFullYear()} গৃহপাঠশালা। সর্বস্বত্ব সংরক্ষিত।</p>
+          </div>
+          <script>window.print();</script>
+        </body>
+      </html>
+    `;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
     }
   };
 
@@ -191,6 +289,32 @@ export default function AdmissionForm({ user }: AdmissionFormProps) {
                   placeholder="আপনার জেলা"
                 />
               </div>
+              <div className="space-y-3">
+                <label className="text-sm font-bold text-slate-400 flex items-center gap-2 ml-1">
+                  <Send size={14} className="text-emerald-500" /> মোবাইল নম্বর
+                </label>
+                <input
+                  required
+                  type="tel"
+                  value={formData.mobileNumber}
+                  onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
+                  className="w-full bg-slate-950 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none"
+                  placeholder="মোবাইল নম্বর লিখুন"
+                />
+              </div>
+              <div className="space-y-3">
+                <label className="text-sm font-bold text-slate-400 flex items-center gap-2 ml-1">
+                  <Send size={14} className="text-emerald-500" /> হোয়াটসঅ্যাপ নম্বর
+                </label>
+                <input
+                  required
+                  type="tel"
+                  value={formData.whatsappNumber}
+                  onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
+                  className="w-full bg-slate-950 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none"
+                  placeholder="হোয়াটসঅ্যাপ নম্বর লিখুন"
+                />
+              </div>
             </div>
 
             <AnimatePresence>
@@ -244,13 +368,29 @@ export default function AdmissionForm({ user }: AdmissionFormProps) {
                   <div>
                     <div className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">{format(new Date(adm.createdAt), 'MMM dd, yyyy')}</div>
                     <div className="text-white font-black text-lg group-hover:text-emerald-500 transition-colors">{adm.studentClass}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                        adm.paymentStatus === 'paid' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'
+                      }`}>
+                        {adm.paymentStatus === 'paid' ? 'পেইড (Paid)' : 'আনপেইড (Unpaid)'}
+                      </div>
+                    </div>
                   </div>
-                  <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                    adm.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500' :
-                    adm.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
-                    'bg-amber-500/10 text-amber-500'
-                  }`}>
-                    {adm.status === 'approved' ? 'অনুমোদিত' : adm.status === 'rejected' ? 'প্রত্যাখ্যাত' : 'অপেক্ষমান'}
+                  <div className="flex flex-col items-end gap-2">
+                    <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                      adm.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500' :
+                      adm.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
+                      'bg-amber-500/10 text-amber-500'
+                    }`}>
+                      {adm.status === 'approved' ? 'অনুমোদিত' : adm.status === 'rejected' ? 'প্রত্যাখ্যাত' : 'অপেক্ষমান'}
+                    </div>
+                    <button
+                      onClick={() => handleDownloadReceipt(adm)}
+                      className="p-2 bg-white/5 hover:bg-emerald-500/10 text-slate-400 hover:text-emerald-500 rounded-xl transition-all"
+                      title="রশিদ ডাউনলোড করুন"
+                    >
+                      <Download size={16} />
+                    </button>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-slate-400 font-medium">

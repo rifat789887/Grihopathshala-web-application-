@@ -34,8 +34,51 @@ export default function CourseList() {
   return (
     <div className="space-y-16">
       <Helmet>
-        <title>আমাদের কোর্সসমূহ | গৃহপাঠশালা - আপনার অনলাইন শিক্ষা সঙ্গী</title>
-        <meta name="description" content="গৃহপাঠশালার সকল কোর্সের তালিকা। ৬ষ্ঠ থেকে এইচএসসি এবং দক্ষতা উন্নয়নমূলক বিভিন্ন কোর্সে ভর্তি হয়ে আপনার পড়াশোনাকে আরও সহজ করুন।" />
+        <title>আমাদের কোর্সসমূহ | গৃহপাঠশালা - আপনার অনলাইন শিক্ষা সঙ্গী | Our Courses - GrihoPathshala</title>
+        <meta name="description" content="গৃহপাঠশালার সকল কোর্সের তালিকা। ৬ষ্ঠ থেকে এইচএসসি এবং দক্ষতা উন্নয়নমূলক বিভিন্ন কোর্সে ভর্তি হয়ে আপনার পড়াশোনাকে আরও সহজ করুন। Explore our wide range of courses from Class 6 to HSC." />
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              "itemListElement": [{
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://ais-pre-v3v74nro3bue67z6xfn4sr-51425668115.asia-east1.run.app/"
+              },{
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Courses",
+                "item": "https://ais-pre-v3v74nro3bue67z6xfn4sr-51425668115.asia-east1.run.app/courses"
+              }]
+            }
+          `}
+        </script>
+        {courses.length > 0 && (
+          <script type="application/ld+json">
+            {`
+              {
+                "@context": "https://schema.org",
+                "@type": "ItemList",
+                "itemListElement": ${JSON.stringify(courses.map((c, i) => ({
+                  "@type": "ListItem",
+                  "position": i + 1,
+                  "item": {
+                    "@type": "Course",
+                    "name": c.title,
+                    "description": c.shortDescription || c.description,
+                    "provider": {
+                      "@type": "Organization",
+                      "name": "GrihoPathshala",
+                      "sameAs": "https://ais-pre-v3v74nro3bue67z6xfn4sr-51425668115.asia-east1.run.app/"
+                    }
+                  }
+                })))}
+              }
+            `}
+          </script>
+        )}
       </Helmet>
       <div className="text-center space-y-6">
         <motion.div
@@ -96,12 +139,22 @@ export default function CourseList() {
                   বিস্তারিত দেখুন <Info size={18} />
                 </span>
               </div>
-              <img 
-                src={course.imageUrl || `https://picsum.photos/seed/course-${course.id}/600/400`} 
-                alt={course.title} 
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
-                referrerPolicy="no-referrer" 
-              />
+              <div className="w-full h-full bg-slate-900/50 flex items-center justify-center p-8 relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-blue-500/5"></div>
+                {course.imageUrl ? (
+                  <img 
+                    src={course.imageUrl} 
+                    alt={course.title} 
+                    className="w-full h-full object-cover rounded-2xl group-hover:scale-110 transition-transform duration-1000" 
+                    referrerPolicy="no-referrer" 
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
+                    <BookOpen size={40} className="text-emerald-500" />
+                  </div>
+                )}
+              </div>
               <div className="absolute top-5 left-5 z-20">
                 <span className="px-4 py-1.5 bg-emerald-500 text-slate-950 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl">
                   {course.category}
@@ -147,13 +200,21 @@ export default function CourseList() {
               </button>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 h-full max-h-[90vh] overflow-y-auto lg:overflow-hidden">
-                <div className="relative h-64 lg:h-full">
-                  <img 
-                    src={selectedCourse.imageUrl || `https://picsum.photos/seed/course-${selectedCourse.id}/800/1200`} 
-                    alt={selectedCourse.title} 
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
+                <div className="relative h-64 lg:h-full bg-slate-950/50 flex items-center justify-center p-12 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-blue-500/10 opacity-30"></div>
+                  {selectedCourse.imageUrl ? (
+                    <img 
+                      src={selectedCourse.imageUrl} 
+                      alt={selectedCourse.title} 
+                      className="w-full h-full object-cover rounded-3xl relative z-10 shadow-2xl"
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20 relative z-10">
+                      <BookOpen size={64} className="text-emerald-500" />
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent lg:bg-gradient-to-r"></div>
                 </div>
 

@@ -24,6 +24,12 @@ service cloud.firestore {
     // Collection: users
     // Fields: uid (string), email (string), role (string), displayName (string), photoURL (string)
     //
+    // Collection: admissions
+    // Fields: studentName (string), fatherName (string), schoolName (string), district (string), course (string), class (string), mobileNumber (string), whatsappNumber (string), status (string), paymentStatus (string), userId (string), userEmail (string), createdAt (string)
+    //
+    // Collection: fees
+    // Fields: userId (string), studentName (string), amount (number), status (string), date (string), receiptId (string)
+    //
     // ===============================================================
 
     // ===============================================================
@@ -35,8 +41,10 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-         (request.auth.token.email == "mdrifat.contact@gmail.com" && request.auth.token.email_verified == true));
+        (
+          (request.auth.token.email == "mdrifat.contact@gmail.com" && request.auth.token.email_verified == true) ||
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+        );
     }
 
     function isOwner(userId) {
@@ -89,6 +97,28 @@ service cloud.firestore {
              data.link is string;
     }
 
+    function isValidAdmission(data) {
+      return data.studentName is string && data.studentName.size() > 0 && data.studentName.size() < 100 &&
+             data.course is string &&
+             data.class is string &&
+             data.mobileNumber is string && data.mobileNumber.size() >= 10 && data.mobileNumber.size() <= 15 &&
+             data.whatsappNumber is string && data.whatsappNumber.size() >= 10 && data.whatsappNumber.size() <= 15 &&
+             data.status in ['pending', 'approved', 'rejected'] &&
+             data.paymentStatus in ['paid', 'unpaid'] &&
+             data.userId is string &&
+             data.userEmail is string &&
+             data.createdAt is string;
+    }
+
+    function isValidFee(data) {
+      return data.userId is string &&
+             data.studentName is string &&
+             data.amount is number &&
+             data.status in ['paid', 'unpaid'] &&
+             data.date is string &&
+             data.receiptId is string;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -123,6 +153,18 @@ service cloud.firestore {
     match /settings/marquee {
       allow read: if true;
       allow write: if isAdmin() && isValidMarquee(request.resource.data);
+    }
+
+    match /admissions/{admissionId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && isValidAdmission(request.resource.data) && request.resource.data.userId == request.auth.uid && request.resource.data.status == 'pending' && request.resource.data.paymentStatus == 'unpaid';
+      allow update: if isAdmin() && isValidAdmission(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /fees/{feeId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow write: if isAdmin() && isValidFee(request.resource.data);
     }
   }
 }

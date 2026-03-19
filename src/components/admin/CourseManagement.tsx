@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, doc, addDoc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { db, handleFirestoreError, OperationType } from '../../firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { BookOpen, Plus, Trash2, Edit2, Check, X, Search, Image as ImageIcon, DollarSign, Tag, FileText } from 'lucide-react';
 
@@ -51,9 +51,12 @@ export default function CourseManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('আপনি কি নিশ্চিত যে আপনি এই কোর্সটি মুছে ফেলতে চান?')) {
+    if (!window.confirm('আপনি কি নিশ্চিত যে আপনি এই কোর্সটি মুছে ফেলতে চান?')) return;
+    try {
       await deleteDoc(doc(db, 'courses', id));
       setCourses(courses.filter(c => c.id !== id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `courses/${id}`);
     }
   };
 

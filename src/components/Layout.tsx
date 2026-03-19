@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User } from 'firebase/auth';
 import { auth } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
-import { GraduationCap, Menu, X, LogOut, User as UserIcon, Settings, Bell, BookOpen, Calendar, PlayCircle } from 'lucide-react';
+import { GraduationCap, Menu, X, LogOut, User as UserIcon, Settings, Bell, BookOpen, Calendar, PlayCircle, Youtube, Facebook, MessageCircle, Send, Users } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,7 +13,16 @@ interface LayoutProps {
 
 export default function Layout({ children, user, role }: LayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = async () => {
     await auth.signOut();
@@ -38,14 +47,25 @@ export default function Layout({ children, user, role }: LayoutProps) {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-slate-950/60 backdrop-blur-xl border-b border-white/5">
+      <header 
+        className={`sticky top-0 z-50 transition-all duration-500 ${
+          isScrolled 
+            ? 'bg-slate-950/80 backdrop-blur-2xl border-b border-white/10 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.5)]' 
+            : 'bg-transparent border-b border-transparent py-5'
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
+          <div className="flex justify-between items-center h-14 md:h-16">
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="p-2.5 bg-emerald-500/10 rounded-2xl group-hover:bg-emerald-500/20 transition-all group-hover:scale-110 shadow-lg shadow-emerald-500/5">
+              <motion.div 
+                whileHover={{ rotate: 10, scale: 1.1 }}
+                className="p-2.5 bg-emerald-500/10 rounded-2xl group-hover:bg-emerald-500/20 transition-all shadow-lg shadow-emerald-500/5"
+              >
                 <GraduationCap className="text-emerald-500" size={28} />
-              </div>
-              <span className="text-2xl font-black tracking-tighter text-white">গৃহ<span className="text-emerald-500">পাঠশালা</span></span>
+              </motion.div>
+              <span className="text-2xl font-black tracking-tighter text-white">
+                গৃহ<span className="text-emerald-500">পাঠশালা</span>
+              </span>
             </Link>
 
             {/* Desktop Nav */}
@@ -54,15 +74,16 @@ export default function Layout({ children, user, role }: LayoutProps) {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className="text-sm font-bold text-slate-400 hover:text-emerald-500 transition-all hover:scale-105"
+                  className="text-sm font-bold text-slate-400 hover:text-emerald-500 transition-all relative group"
                 >
                   {link.name}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-emerald-500 transition-all group-hover:w-full"></span>
                 </Link>
               ))}
               {role === 'admin' && (
                 <Link
                   to="/admin"
-                  className="flex items-center gap-2 text-sm font-black text-emerald-500 hover:text-emerald-400 bg-emerald-500/5 px-4 py-2 rounded-xl border border-emerald-500/20"
+                  className="flex items-center gap-2 text-sm font-black text-emerald-500 hover:text-emerald-400 bg-emerald-500/5 px-4 py-2 rounded-xl border border-emerald-500/20 transition-all hover:bg-emerald-500/10"
                 >
                   <Settings size={16} /> এডমিন
                 </Link>
@@ -83,7 +104,7 @@ export default function Layout({ children, user, role }: LayoutProps) {
               ) : (
                 <Link
                   to="/auth"
-                  className="text-sm font-black bg-white/5 hover:bg-white/10 text-white px-7 py-2.5 rounded-2xl transition-all border border-white/10 shadow-xl"
+                  className="text-sm font-black bg-white/5 hover:bg-white/10 text-white px-7 py-2.5 rounded-2xl transition-all border border-white/10 shadow-xl hover:border-white/20"
                 >
                   লগইন
                 </Link>
@@ -92,7 +113,7 @@ export default function Layout({ children, user, role }: LayoutProps) {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-3 text-slate-400 hover:text-white bg-white/5 rounded-2xl border border-white/5"
+              className="md:hidden p-3 text-slate-400 hover:text-white bg-white/5 rounded-2xl border border-white/5 transition-all active:scale-90"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -176,9 +197,23 @@ export default function Layout({ children, user, role }: LayoutProps) {
                 <GraduationCap className="text-emerald-500" size={24} />
                 <span className="text-xl font-bold text-white">গৃহপাঠশালা</span>
               </Link>
-              <p className="text-slate-400 max-w-md leading-relaxed">
+              <p className="text-slate-400 max-w-md leading-relaxed mb-6">
                 একটি আধুনিক প্রযুক্তি নির্ভর শিক্ষা প্ল্যাটফর্ম যা ৬ষ্ঠ থেকে ১২তম শ্রেণীর শিক্ষার্থীদের জন্য মানসম্মত শিক্ষা নিশ্চিত করে।
               </p>
+              <div className="flex items-center gap-4">
+                <a href="https://www.youtube.com/@GrihoPathshala" target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all" title="YouTube">
+                  <Youtube size={20} />
+                </a>
+                <a href="https://www.facebook.com/GrihoPathshala" target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 transition-all" title="Facebook">
+                  <Facebook size={20} />
+                </a>
+                <a href="https://wa.me/8801300424328" target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all" title="WhatsApp">
+                  <MessageCircle size={20} />
+                </a>
+                <a href="https://t.me/Grihopathshala" target="_blank" rel="noopener noreferrer" className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-sky-500 hover:bg-sky-500/10 transition-all" title="Telegram">
+                  <Send size={20} />
+                </a>
+              </div>
             </div>
             <div>
               <h4 className="text-white font-bold mb-4">দ্রুত লিঙ্ক</h4>
@@ -190,11 +225,19 @@ export default function Layout({ children, user, role }: LayoutProps) {
               </ul>
             </div>
             <div>
+              <h4 className="text-white font-bold mb-4">কমিউনিটি</h4>
+              <ul className="space-y-2 text-slate-400 text-sm">
+                <li><a href="https://facebook.com/groups/grihopathshala/" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-500">ফেসবুক গ্রুপ</a></li>
+                <li><a href="https://chat.whatsapp.com/KIQHgovAq78IIsBT3cBY9k" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-500">হোয়াটসঅ্যাপ গ্রুপ</a></li>
+                <li><a href="https://t.me/Grihopathshala" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-500">টেলিগ্রাম চ্যানেল</a></li>
+              </ul>
+            </div>
+            <div>
               <h4 className="text-white font-bold mb-4">যোগাযোগ</h4>
               <ul className="space-y-2 text-slate-400 text-sm">
+                <li><a href="https://m.me/Grihopathshala" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-500">ফেসবুক মেসেঞ্জার</a></li>
+                <li><a href="https://wa.me/8801300424328" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-500">হোয়াটসঅ্যাপ: +৮৮০ ১৩০০ ৪২৪৩২৮</a></li>
                 <li>ইমেইল: info@grihopathshala.com</li>
-                <li>ফোন: +৮৮০ ১২৩৪ ৫৬৭৮৯০</li>
-                <li>ঠিকানা: ঢাকা, বাংলাদেশ</li>
               </ul>
             </div>
           </div>

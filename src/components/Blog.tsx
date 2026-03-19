@@ -24,8 +24,59 @@ export default function Blog() {
   return (
     <div className="space-y-16">
       <Helmet>
-        <title>নিউজ ও ব্লগ | গৃহপাঠশালা - আপনার অনলাইন শিক্ষা সঙ্গী</title>
-        <meta name="description" content="গৃহপাঠশালার সর্বশেষ নিউজ এবং ব্লগ পোস্টগুলো পড়ুন। শিক্ষামূলক বিভিন্ন টিপস এবং ট্রিকস এখান থেকে জেনে নিন।" />
+        <title>নিউজ ও ব্লগ | গৃহপাঠশালা - আপনার অনলাইন শিক্ষা সঙ্গী | News & Blog - GrihoPathshala</title>
+        <meta name="description" content="গৃহপাঠশালার সর্বশেষ নিউজ এবং ব্লগ পোস্টগুলো পড়ুন। শিক্ষামূলক বিভিন্ন টিপস এবং ট্রিকস এখান থেকে জেনে নিন। Read the latest news and educational tips from GrihoPathshala." />
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              "itemListElement": [{
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://ais-pre-v3v74nro3bue67z6xfn4sr-51425668115.asia-east1.run.app/"
+              },{
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Blog",
+                "item": "https://ais-pre-v3v74nro3bue67z6xfn4sr-51425668115.asia-east1.run.app/blog"
+              }]
+            }
+          `}
+        </script>
+        {posts.length > 0 && (
+          <script type="application/ld+json">
+            {`
+              {
+                "@context": "https://schema.org",
+                "@type": "ItemList",
+                "itemListElement": ${JSON.stringify(posts.map((p, i) => ({
+                  "@type": "ListItem",
+                  "position": i + 1,
+                  "item": {
+                    "@type": "BlogPosting",
+                    "headline": p.title,
+                    "description": p.content?.substring(0, 160),
+                    "datePublished": p.date,
+                    "author": {
+                      "@type": "Person",
+                      "name": "Admin"
+                    },
+                    "publisher": {
+                      "@type": "Organization",
+                      "name": "GrihoPathshala",
+                      "logo": {
+                        "@type": "ImageObject",
+                        "url": "https://ais-pre-v3v74nro3bue67z6xfn4sr-51425668115.asia-east1.run.app/graduation-cap.svg"
+                      }
+                    }
+                  }
+                })))}
+              }
+            `}
+          </script>
+        )}
       </Helmet>
       <div className="text-center space-y-6">
         <h1 className="text-5xl font-black text-white tracking-tight flex items-center justify-center gap-6">
@@ -45,7 +96,7 @@ export default function Blog() {
             className="group bg-slate-900/50 border border-white/10 rounded-[3rem] overflow-hidden hover:border-emerald-500/30 transition-all flex flex-col shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="aspect-[16/10] relative overflow-hidden">
-              <img src={`https://picsum.photos/seed/${post.id}/600/400`} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
+              <img src={`https://picsum.photos/seed/${post.id}/600/400`} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" loading="lazy" />
               <div className="absolute top-6 left-6">
                 <span className="px-5 py-2.5 bg-emerald-500 text-slate-950 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl">
                   শিক্ষা

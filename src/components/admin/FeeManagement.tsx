@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, doc, addDoc, query, orderBy, where } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { db, handleFirestoreError, OperationType } from '../../firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { CreditCard, Plus, Search, Download, CheckCircle, Clock, X, Printer, Award, FileText, GraduationCap } from 'lucide-react';
 import { format } from 'date-fns';
@@ -21,22 +21,31 @@ export default function FeeManagement() {
 
   useEffect(() => {
     const fetchFees = async () => {
-      const q = query(collection(db, 'fees'), orderBy('date', 'desc'));
-      const snap = await getDocs(q);
-      setFees(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setLoading(false);
+      try {
+        const q = query(collection(db, 'fees'), orderBy('date', 'desc'));
+        const snap = await getDocs(q);
+        setFees(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (error) {
+        handleFirestoreError(error, OperationType.LIST, 'fees');
+      } finally {
+        setLoading(false);
+      }
     };
     fetchFees();
   }, []);
 
   const handleAddFee = async (e: React.FormEvent) => {
     e.preventDefault();
-    const receiptId = 'GP-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-    const feeData = { ...newFee, receiptId, date: new Date(newFee.date).toISOString() };
-    const docRef = await addDoc(collection(db, 'fees'), feeData);
-    setFees([{ id: docRef.id, ...feeData }, ...fees]);
-    setIsModalOpen(false);
-    setNewFee({ userId: '', studentName: '', amount: 0, status: 'paid', date: new Date().toISOString().split('T')[0] });
+    try {
+      const receiptId = 'GP-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      const feeData = { ...newFee, receiptId, date: new Date(newFee.date).toISOString() };
+      const docRef = await addDoc(collection(db, 'fees'), feeData);
+      setFees([{ id: docRef.id, ...feeData }, ...fees]);
+      setIsModalOpen(false);
+      setNewFee({ userId: '', studentName: '', amount: 0, status: 'paid', date: new Date().toISOString().split('T')[0] });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'fees');
+    }
   };
 
   return (

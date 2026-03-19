@@ -74,6 +74,41 @@
         "photoURL": { "type": "string" }
       },
       "required": ["uid", "email", "role"]
+    },
+    "Admission": {
+      "title": "Admission",
+      "description": "A student admission application",
+      "type": "object",
+      "properties": {
+        "studentName": { "type": "string" },
+        "fatherName": { "type": "string" },
+        "schoolName": { "type": "string" },
+        "district": { "type": "string" },
+        "course": { "type": "string" },
+        "class": { "type": "string" },
+        "mobileNumber": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "paymentStatus": { "type": "string", "enum": ["paid", "unpaid"] },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentName", "course", "class", "mobileNumber", "whatsappNumber", "status", "paymentStatus", "userId", "userEmail", "createdAt"]
+    },
+    "Fee": {
+      "title": "Fee",
+      "description": "A fee payment record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["paid", "unpaid"] },
+        "date": { "type": "string", "format": "date-time" },
+        "receiptId": { "type": "string" }
+      },
+      "required": ["userId", "studentName", "amount", "status", "date", "receiptId"]
     }
   },
   "firestore": {
@@ -100,6 +135,14 @@
     "/users/{userId}": {
       "schema": "User",
       "description": "User profiles"
+    },
+    "/admissions/{admissionId}": {
+      "schema": "Admission",
+      "description": "Student admission applications"
+    },
+    "/fees/{feeId}": {
+      "schema": "Fee",
+      "description": "Fee payment records"
     }
   }
 }

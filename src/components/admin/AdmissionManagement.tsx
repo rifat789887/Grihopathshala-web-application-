@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, doc, updateDoc, query, orderBy, where } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { db, handleFirestoreError, OperationType } from '../../firebase';
 import { motion, AnimatePresence } from 'motion/react';
-import { GraduationCap, Check, X, Clock, Search, Filter, MoreVertical, ExternalLink } from 'lucide-react';
+import { GraduationCap, Check, X, Clock, Search, Filter, MoreVertical, ExternalLink, Phone, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function AdmissionManagement() {
@@ -12,20 +12,38 @@ export default function AdmissionManagement() {
 
   useEffect(() => {
     const fetchAdmissions = async () => {
-      let q = query(collection(db, 'admissions'), orderBy('createdAt', 'desc'));
-      if (filter !== 'all') {
-        q = query(collection(db, 'admissions'), where('status', '==', filter), orderBy('createdAt', 'desc'));
+      try {
+        let q = query(collection(db, 'admissions'), orderBy('createdAt', 'desc'));
+        if (filter !== 'all') {
+          q = query(collection(db, 'admissions'), where('status', '==', filter), orderBy('createdAt', 'desc'));
+        }
+        const snap = await getDocs(q);
+        setAdmissions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (error) {
+        handleFirestoreError(error, OperationType.LIST, 'admissions');
+      } finally {
+        setLoading(false);
       }
-      const snap = await getDocs(q);
-      setAdmissions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setLoading(false);
     };
     fetchAdmissions();
   }, [filter]);
 
   const updateStatus = async (id: string, status: string) => {
-    await updateDoc(doc(db, 'admissions', id), { status });
-    setAdmissions(admissions.map(a => a.id === id ? { ...a, status } : a));
+    try {
+      await updateDoc(doc(db, 'admissions', id), { status });
+      setAdmissions(admissions.map(a => a.id === id ? { ...a, status } : a));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `admissions/${id}`);
+    }
+  };
+
+  const updatePaymentStatus = async (id: string, paymentStatus: string) => {
+    try {
+      await updateDoc(doc(db, 'admissions', id), { paymentStatus });
+      setAdmissions(admissions.map(a => a.id === id ? { ...a, paymentStatus } : a));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `admissions/${id}`);
+    }
   };
 
   const filterLabels: { [key: string]: string } = {
@@ -79,6 +97,14 @@ export default function AdmissionManagement() {
                     <span className="bg-white/5 px-3 py-1 rounded-lg border border-white/5">{adm.schoolName}</span>
                     <span className="text-slate-700">•</span>
                     <span className="bg-white/5 px-3 py-1 rounded-lg border border-white/5">{adm.district}</span>
+                    <span className="text-slate-700">•</span>
+                    <span className="bg-emerald-500/5 text-emerald-500/70 px-3 py-1 rounded-lg border border-emerald-500/10 flex items-center gap-1">
+                      <Phone size={10} /> {adm.mobileNumber}
+                    </span>
+                    <span className="text-slate-700">•</span>
+                    <span className="bg-emerald-500/5 text-emerald-500/70 px-3 py-1 rounded-lg border border-emerald-500/10 flex items-center gap-1">
+                      <Phone size={10} /> {adm.whatsappNumber} (WA)
+                    </span>
                   </div>
                 </div>
               </div>
@@ -89,6 +115,14 @@ export default function AdmissionManagement() {
                   <div className="text-white font-bold text-sm bg-white/5 px-4 py-2 rounded-xl border border-white/5">{format(new Date(adm.createdAt), 'MMM dd, yyyy')}</div>
                 </div>
                 <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => updatePaymentStatus(adm.id, adm.paymentStatus === 'paid' ? 'unpaid' : 'paid')}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 ${
+                      adm.paymentStatus === 'paid' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'
+                    }`}
+                  >
+                    <DollarSign size={14} /> {adm.paymentStatus === 'paid' ? 'পেইড (Paid)' : 'আনপেইড (Unpaid)'}
+                  </button>
                   {adm.status === 'pending' ? (
                     <>
                       <button

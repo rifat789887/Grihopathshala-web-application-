@@ -56,7 +56,7 @@ export default function PastClasses() {
             className="group bg-slate-900/50 border border-white/10 rounded-[3rem] overflow-hidden hover:border-emerald-500/30 transition-all shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="aspect-video relative bg-slate-800 overflow-hidden">
-              <img src={`https://picsum.photos/seed/${c.id}/400/225`} alt={c.title} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" referrerPolicy="no-referrer" />
+              <img src={`https://picsum.photos/seed/${c.id}/400/225`} alt={c.title} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" referrerPolicy="no-referrer" loading="lazy" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="p-5 bg-emerald-500 text-slate-950 rounded-full shadow-2xl shadow-emerald-500/40 scale-0 group-hover:scale-100 transition-transform duration-500 rotate-12 group-hover:rotate-0">
                   <Play size={28} fill="currentColor" />
